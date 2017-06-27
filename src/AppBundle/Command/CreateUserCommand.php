@@ -75,9 +75,11 @@ class CreateUserCommand extends Command
                 }
             }
 
-            //foreach ($singFolder->files()->in($directory->getRealPath()) as $file) {
-            //
-            //}
+            foreach ($singFolder->files()->in($directory->getRealPath()) as $file) {
+                $fs->copy($file, 'image.jpg');
+             
+                die();
+            }
         }
     }
 
