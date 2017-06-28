@@ -12,12 +12,14 @@ use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-
+use Symfony\Component\Console\Helper\ProgressBar;
 class CreateUserCommand extends Command
 {
-    private $folderFrom = '/Users/Lucas/Downloads/drive-download-20170627T170713Z-001/';
+    private $folderFrom = '/Users/Lucas/Downloads/drive-download-20170627T170713Z-001';
 
     private $folderTo   = '/Users/Lucas/projetos/symfonyprojects/testing/testing/';
+
+    private $autor      = 'Autor Desconhecido';
 
     private $months     = [
         '01' => '01_janeiro',
@@ -48,6 +50,7 @@ class CreateUserCommand extends Command
         $finder = new Finder();
         $finder->in($this->folderFrom);
         $fs = new Filesystem();
+
         foreach ($finder->directories() as $directory) {
 
             $singFolder = new Finder();
@@ -58,16 +61,22 @@ class CreateUserCommand extends Command
 
             $question = new Question('Pasta  - '.$directory->getRelativePathname().': ');
 
-            $bundle = $helper->ask($input, $output, $question);
+            $bundle = explode(' ', $helper->ask($input, $output, $question), 2);
 
-            if (! $this->validateDate($bundle)) {
+            $date = $bundle[0];
+            $nameFolder = isset($bundle[1]) ? $bundle[1] : null;
+
+            if (! $this->validateDate($bundle[0])) {
                 continue;
             }
-            $date = explode('/', $bundle);
+            $date = explode('/', $bundle[0]);
 
-            $directoryTo = $this->folderTo.$date[2]."/".$this->months[$date[1]];
+            $directoryTo = $this->folderTo.$date[2]."/".$this->months[$date[1]]."/".$date['2'].'_'.$date['1'].'_'.$date['0'];
+            if ($nameFolder) {
+                $directoryTo = $directoryTo.' - '.$nameFolder;
+            }
 
-            if (!$fs->exists($directoryTo)) {
+            if (! $fs->exists($directoryTo)) {
                 try {
                     $fs->mkdir($directoryTo);
                 } catch(IOExceptionInterface $e) {
@@ -75,11 +84,29 @@ class CreateUserCommand extends Command
                 }
             }
 
+            $number = 0;
+            $progress = new ProgressBar($output, $singFolder->files()->in($directory->getRealPath())->count());
+
             foreach ($singFolder->files()->in($directory->getRealPath()) as $file) {
-                $fs->copy($file, 'image.jpg');
-             
-                die();
+
+                $number = sprintf('%1$05d', ++$number);
+
+                $name = $date['2'].'.'.$date['1'].'.'.$date['0'].'_'.$this->autor.'_'.$number;
+
+                $imageTo = $directoryTo.'/'.$name.'.'.$file->getExtension();
+
+                if ($file->getExtension() == "JPG") {
+                    $resource = imagecreatefromjpeg($file);
+                    imagejpeg($resource, $imageTo, 70);
+                }
+                if ($file->getExtension() == "PNG") {
+                    $resource = imagecreatefrompng($file);
+                    imagejpeg($resource, $imageTo, 70);
+                }
+                $progress->advance();
             }
+            $progress->finish();
+            die();
         }
     }
 
