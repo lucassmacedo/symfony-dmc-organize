@@ -15,9 +15,9 @@ use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Helper\ProgressBar;
 class CreateUserCommand extends Command
 {
-    private $folderFrom = '/Users/Lucas/Downloads/drive-download-20170627T170713Z-001';
+    private $folderFrom = '/media/lucas/1EC4EE21C4EDFB43/Users/LucasDesk/Desktop/DMD/Sem\ arumar/Fotos\ UDV\ 2';
 
-    private $folderTo   = '/Users/Lucas/projetos/symfonyprojects/testing/testing/';
+    private $folderTo   = '/media/lucas/1EC4EE21C4EDFB43/Users/LucasDesk/Desktop/DMD/programa/';
 
     private $autor      = 'Autor Desconhecido';
 
@@ -55,7 +55,8 @@ class CreateUserCommand extends Command
 
             $singFolder = new Finder();
 
-            $singFolder->in($this->folderFrom);
+            $singFolder->in($directory->getRealPath());
+
 
             $helper = $this->getHelper('question');
 
@@ -82,12 +83,12 @@ class CreateUserCommand extends Command
                 } catch(IOExceptionInterface $e) {
                     echo "Erro ao criar diretório ".$e->getPath();
                 }
-            }
+            }   
 
             $number = 0;
-            $progress = new ProgressBar($output, $singFolder->files()->in($directory->getRealPath())->count());
+            $progress = new ProgressBar($output, $singFolder->files()->count());
 
-            foreach ($singFolder->files()->in($directory->getRealPath()) as $file) {
+            foreach ($singFolder->files() as $file) {
 
                 $number = sprintf('%1$05d', ++$number);
 
@@ -106,7 +107,7 @@ class CreateUserCommand extends Command
                 $progress->advance();
             }
             $progress->finish();
-            die();
+
         }
     }
 
