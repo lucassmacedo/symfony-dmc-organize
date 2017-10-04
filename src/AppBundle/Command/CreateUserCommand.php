@@ -13,13 +13,15 @@ use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Spatie\ImageOptimizer\OptimizerChainFactory;
+
 class CreateUserCommand extends Command
 {
-    private $folderFrom = '/media/lucas/1EC4EE21C4EDFB43/Users/LucasDesk/Desktop/DMD/Sem\ arumar/Fotos\ UDV\ 2';
+    private $folderFrom = '/media/lucas/1EC4EE21C4EDFB43/Users/LucasDesk/Desktop/DMD/Sem\ arumar/Tmp';
 
     private $folderTo   = '/media/lucas/1EC4EE21C4EDFB43/Users/LucasDesk/Desktop/DMD/programa/';
 
-    private $autor      = 'Autor Desconhecido';
+    private $autor      = 'Larissa Bortolli';
 
     private $months     = [
         '01' => '01_janeiro',
@@ -36,10 +38,11 @@ class CreateUserCommand extends Command
         '12' => '12_dezembro',
     ];
 
+
     protected function configure()
     {
         $this// the name of the command (the part after "bin/console")
-        ->setName('app:create-user')// the short description shown while running "php bin/console list"
+        ->setName('app:photo')// the short description shown while running "php bin/console list"
         ->setDescription('Creates a new user.')// the full command description shown when running the command with
         // the "--help" option
         ->setHelp('This command allows you to create a user...');
@@ -47,12 +50,14 @@ class CreateUserCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+
         $finder = new Finder();
         $finder->in($this->folderFrom);
         $fs = new Filesystem();
 
+        $countFolders = 0;
         foreach ($finder->directories() as $directory) {
-
+            $countFolders++;
             $singFolder = new Finder();
 
             $singFolder->in($directory->getRealPath());
@@ -96,19 +101,25 @@ class CreateUserCommand extends Command
 
                 $imageTo = $directoryTo.'/'.$name.'.'.$file->getExtension();
 
-                if ($file->getExtension() == "JPG") {
-                    $resource = imagecreatefromjpeg($file);
-                    imagejpeg($resource, $imageTo, 70);
-                }
-                if ($file->getExtension() == "PNG") {
-                    $resource = imagecreatefrompng($file);
-                    imagejpeg($resource, $imageTo, 70);
-                }
+                $optimizerChain = OptimizerChainFactory::create();
+                $optimizerChain->optimize($file->getPathName(), $imageTo);
+
+                // if ($file->getExtension() == "JPG") {
+                //     $resource = imagecreatefromjpeg($file);
+                //     imagejpeg($resource, $imageTo, 70);
+                // }
+                // if ($file->getExtension() == "PNG") {
+                //     $resource = imagecreatefrompng($file);
+                //     imagejpeg($resource, $imageTo, 70);
+                // }
+
                 $progress->advance();
             }
             $progress->finish();
 
         }
+
+        echo "\n" . $countFolders . " pastas organizadas \n";
     }
 
     private function makeDirectories()
