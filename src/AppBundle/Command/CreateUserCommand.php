@@ -21,7 +21,7 @@ class CreateUserCommand extends Command
 
     private $folderTo   = '/media/lucas/1EC4EE21C4EDFB43/Users/LucasDesk/Desktop/DMD/programa/';
 
-    private $autor      = 'Larissa Bortolli';
+    private $autor      = 'Daiane Luna';
 
     private $months     = [
         '01' => '01_janeiro',
@@ -62,24 +62,28 @@ class CreateUserCommand extends Command
 
             $singFolder->in($directory->getRealPath());
 
+            $bundle = explode(' ', $directory->getRelativePathname(), 2);
+
+
+            if (!$this->validateDate($bundle[0])) {
+                echo $directory->getRelativePathname() . ' Não coresponde ao formato dd-mm-yy';
+                continue;
+            }
 
             $helper = $this->getHelper('question');
 
-            $question = new Question('Pasta  - '.$directory->getRelativePathname().': ');
-
-            $bundle = explode(' ', $helper->ask($input, $output, $question), 2);
-
             $date = $bundle[0];
-            $nameFolder = isset($bundle[1]) ? $bundle[1] : null;
+            $nameFolder = $directory->getRelativePathname();
 
             if (! $this->validateDate($bundle[0])) {
                 continue;
             }
-            $date = explode('/', $bundle[0]);
+
+            $date = explode('-', $bundle[0]);
 
             $directoryTo = $this->folderTo.$date[2]."/".$this->months[$date[1]]."/".$date['2'].'_'.$date['1'].'_'.$date['0'];
-            if ($nameFolder) {
-                $directoryTo = $directoryTo.' - '.$nameFolder;
+            if (isset($bundle[1])) {
+                $directoryTo = $directoryTo.' - '.$bundle[1];
             }
 
             if (! $fs->exists($directoryTo)) {
@@ -126,7 +130,7 @@ class CreateUserCommand extends Command
     {
     }
 
-    private function validateDate($date, $format = 'd/m/Y')
+    private function validateDate($date, $format = 'd-m-Y')
     {
         $d = \DateTime::createFromFormat($format, $date);
 
