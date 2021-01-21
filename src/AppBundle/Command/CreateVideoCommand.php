@@ -3,6 +3,7 @@
 namespace AppBundle\Command;
 
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
@@ -15,11 +16,11 @@ use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Spatie\ImageOptimizer\OptimizerChainFactory;
 
-class CreateUserCommand extends Command
+class CreateVideoCommand extends Command
 {
-    private $folderFrom = '/home/lucas/Área de Trabalho/DMC/Temp/';
+    private $folderFrom = '/media/lucas/DMC - Bkp/Sem arumar/VIdeos/';
 
-    private $folderTo = '/home/lucas/Área de Trabalho/DMC Organizado/';
+    private $folderTo = '/media/lucas/DMC - Bkp/Materiais DMD Organizados/Água Boa/C - Áudio Visual/A1 - Vídeos  Digitais/';
 
     private $autor = 'Lucas Macedo';
 
@@ -42,10 +43,11 @@ class CreateUserCommand extends Command
     protected function configure()
     {
         $this// the name of the command (the part after "bin/console")
-        ->setName('app:photo')// the short description shown while running "php bin/console list"
+        ->setName('app:video')// the short description shown while running "php bin/console list"
         ->setDescription('Creates a new user.')// the full command description shown when running the command with
         // the "--help" option
-        ->setHelp('This command allows you to create a user...');
+        ->addArgument('original_name', InputArgument::OPTIONAL, 'original_name')
+            ->setHelp('This command allows you to create a user...');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -55,9 +57,11 @@ class CreateUserCommand extends Command
         $finder->in($this->folderFrom);
         $fs = new Filesystem();
 
+        $original_name = (bool)$input->getArgument('original_name');
 
         $countFolders = 0;
         foreach ($finder->directories() as $directory) {
+
             $countFolders++;
             $singFolder = new Finder();
 
@@ -66,31 +70,23 @@ class CreateUserCommand extends Command
             $bundle = explode(' ', $directory->getRelativePathname(), 2);
 
 
-
+            if (!$this->validateDate($bundle[0])) {
+                echo $directory->getRelativePathname() . ' Não coresponde ao formato dd-mm-yy';
+                continue;
+            }
 
             $helper = $this->getHelper('question');
 
             $date = $bundle[0];
             $nameFolder = $directory->getRelativePathname();
 
-            $date = explode('-', $bundle[0]);
-
-            if ($this->validateDate($bundle[0], 'Y-m-d')) {
-                $directoryTo = $this->folderTo . $date[0] . "/" . $this->months[$date[1]] . "/" . $date['0'] . '_' . $date['1'] . '_' . $date['2'];
-
-            } else if ($this->validateDate($bundle[0], 'Y_m_d')) {
-                $date = explode('_', $bundle[0]);
-                $directoryTo = $this->folderTo . $date[0] . "/" . $this->months[$date[1]] . "/" . $date['0'] . '_' . $date['1'] . '_' . $date['2'];
-
-            } else if ($this->validateDate($bundle[0], 'd-m-Y')) {
-                $directoryTo = $this->folderTo . $date[2] . "/" . $this->months[$date[1]] . "/" . $date['2'] . '_' . $date['1'] . '_' . $date['0'];
-            } else {
-                echo $directory->getRelativePathname() . ' Não coresponde ao formato dd-mm-yy e yy-mm-dd';
+            if (!$this->validateDate($bundle[0])) {
                 continue;
             }
 
+            $date = explode('-', $bundle[0]);
 
-
+            $directoryTo = $this->folderTo . $date[2] . "/" . $this->months[$date[1]] . "/" . $date['2'] . '_' . $date['1'] . '_' . $date['0'];
             if (isset($bundle[1])) {
                 $directoryTo = $directoryTo . ' - ' . $bundle[1];
             }
@@ -108,14 +104,21 @@ class CreateUserCommand extends Command
 
             foreach ($singFolder->files() as $file) {
 
+
                 $number = sprintf('%1$05d', ++$number);
 
                 $name = $date['2'] . '.' . $date['1'] . '.' . $date['0'] . '_' . $this->autor . '_' . $number;
 
+                if ($original_name) {
+                    $name .= $name . "_" . $file->getFilename();
+                }
                 $imageTo = $directoryTo . '/' . $name . '.' . $file->getExtension();
 
-                $optimizerChain = OptimizerChainFactory::create();
-                $optimizerChain->optimize($file->getPathName(), $imageTo);
+                echo "Copiando pasta " . $directory->getFilename() . " ----  Arquivo: " . $name . " --- Tamanho: " . ($this->formatSizeUnits($file->getSize())) . "\n";
+
+                copy($file->getPathName(), $imageTo);
+                // $optimizerChain = OptimizerChainFactory::create();
+                // $optimizerChain->optimize($file->getPathName(), $imageTo);
 
                 // if ($file->getExtension() == "JPG") {
                 //     $resource = imagecreatefromjpeg($file);
@@ -145,4 +148,23 @@ class CreateUserCommand extends Command
 
         return $d && $d->format($format) == $date;
     }
+
+    function formatSizeUnits($bytes)
+    {
+        if ($bytes >= 1073741824) {
+            $bytes = number_format($bytes / 1073741824, 2) . ' GB';
+        } elseif ($bytes >= 1048576) {
+            $bytes = number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            $bytes = number_format($bytes / 1024, 2) . ' KB';
+        } elseif ($bytes > 1) {
+            $bytes = $bytes . ' bytes';
+        } elseif ($bytes == 1) {
+            $bytes = $bytes . ' byte';
+        } else {
+            $bytes = '0 bytes';
+        }
+        return $bytes;
+    }
+
 }
